@@ -20,6 +20,7 @@ import { useCallback } from 'react';
 import { TFile, WorkspaceLeaf } from 'obsidian';
 import { useServices } from '../context/ServicesContext';
 import { runAsyncAction } from '../utils/async';
+import { getCanonicalNote } from '../utils/multiLocationNotes';
 
 interface OpenFileOptions {
     /** Optional target leaf for opening the file */
@@ -43,23 +44,28 @@ export function useFileOpener() {
 
             const active = options?.active ?? false;
 
+            // Multi-location notes: a secondary (duplicate-name) note redirects to the
+            // canonical "first created" note, so the editor opens the original while the
+            // navigator keeps the clicked secondary selected.
+            const fileToOpen = getCanonicalNote(app, file);
+
             const openFile = async () => {
                 const targetLeaf = options?.leaf ?? app.workspace.getLeaf(false);
                 if (!targetLeaf) {
                     return;
                 }
-                await targetLeaf.openFile(file, { active });
+                await targetLeaf.openFile(fileToOpen, { active });
             };
 
             if (commandQueue) {
                 // Use command queue to serialize file operations
-                runAsyncAction(() => commandQueue.executeOpenActiveFile(file, openFile, { active }));
+                runAsyncAction(() => commandQueue.executeOpenActiveFile(fileToOpen, openFile, { active }));
                 return;
             }
 
             // Open file directly with async error handling
             runAsyncAction(() => openFile());
         },
-        [app.workspace, commandQueue]
+        [app, commandQueue]
     );
 }

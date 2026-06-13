@@ -44,6 +44,7 @@ import type { Align } from '../types/scroll';
 import { navigateToTag as navigateToTagInternal, type NavigateToTagOptions } from '../utils/tagNavigation';
 import { navigateToProperty as navigateToPropertyInternal, type NavigateToPropertyOptions } from '../utils/propertyNavigation';
 import { isFileHiddenBySettings } from '../utils/exclusionUtils';
+import { getCanonicalNote } from '../utils/multiLocationNotes';
 import { strings } from '../i18n';
 import { showNotice } from '../utils/noticeUtils';
 import { registerActiveFileWorkspaceListeners } from '../utils/workspaceActiveFileEvents';
@@ -927,6 +928,21 @@ export function useNavigatorReveal({ app, navigationPaneRef, focusNavigationPane
             const file = !ignoreNavigatorPreviewOpen && candidateFile instanceof TFile ? candidateFile : activeViewFile;
             if (!file) {
                 return;
+            }
+
+            // Multi-location notes: when the navigator currently has a secondary
+            // (duplicate-name) note selected, opening it redirects to the canonical
+            // "first created" note, which then becomes the active file. Suppress
+            // auto-reveal in that case so the clicked secondary stays selected and the
+            // note keeps appearing in its duplicate location instead of jumping to the
+            // canonical's folder.
+            const selectedPath = selectedFilePathRef.current;
+            if (selectedPath && selectedPath !== file.path) {
+                const selectedFile = app.vault.getFileByPath(selectedPath);
+                if (selectedFile && getCanonicalNote(app, selectedFile).path === file.path) {
+                    activeFileRef.current = file.path;
+                    return;
+                }
             }
 
             // Check if the file was just created; always reveal newly created files

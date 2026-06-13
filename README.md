@@ -1,3 +1,62 @@
+# Notebook Navigator (Multi-location fork)
+
+> This is a fork of [Notebook Navigator](https://github.com/johansan/notebook-navigator)
+> by Johan Sanneblad, adding a single feature: **a note can appear in multiple
+> folders in the navigator pane.**
+
+## The multi-location feature
+
+In stock Obsidian, two notes that share a name but live in different folders are
+separate files, told apart by their path. This fork lets one logical note appear in
+several places in the **Notebook Navigator pane**:
+
+- To make a note appear in another folder, create a note **with the same name** in
+  that folder. It shows up there like any normal file.
+- Clicking **any** of the same-named notes opens the **original** — the
+  **first-created** note (the one with the earliest creation time). The duplicates
+  act as stand-ins that all point back to the original.
+- The clicked stand-in stays selected/highlighted in the navigator, so the note
+  keeps appearing in each of its locations instead of jumping to the original's
+  folder.
+
+Everything else works exactly like upstream Notebook Navigator.
+
+### Scope and limitations
+
+- This behavior lives **only in the Notebook Navigator pane**. Obsidian's native
+  file explorer, search, quick-switcher, and the filesystem still treat the
+  duplicates as independent files (because they are).
+- Only **markdown notes** participate. Other file types (images, PDFs, etc.) behave
+  normally even if their names collide.
+- "First created" is decided by file creation time (`ctime`); exact ties are broken
+  deterministically by path.
+- The redirection applies to *opening* a note from the navigator. The intended
+  workflow is to create empty/placeholder stand-ins purely to surface the note in
+  multiple folders; editing a stand-in's own contents on disk does not change the
+  original.
+
+### Building / installing this fork
+
+```bash
+npm install
+npm run build   # produces main.js, manifest.json, styles.css
+```
+
+Copy `main.js`, `manifest.json`, and `styles.css` into your vault under
+`.obsidian/plugins/notebook-navigator-folders/`, then enable
+**Notebook Navigator (Multi-location)** in Settings → Community plugins. A prebuilt
+`main.js` is committed in this repo for convenience. The plugin uses a distinct id
+(`notebook-navigator-folders`) so it can be installed alongside the official plugin.
+
+The implementation is intentionally small and centralized in
+[`src/utils/multiLocationNotes.ts`](src/utils/multiLocationNotes.ts) (`getCanonicalNote`),
+which is applied at the navigator's file-open paths
+([`useFileOpener`](src/hooks/useFileOpener.ts),
+[`openFileInContext`](src/utils/openFileInContext.ts)) and in the auto-reveal guard
+([`useNavigatorReveal`](src/hooks/useNavigatorReveal.ts)).
+
+---
+
 Read in your language: [English](https://notebooknavigator.com/docs.html) • [العربية](https://notebooknavigator.com/ar/docs.html) • [Deutsch](https://notebooknavigator.com/de/docs.html) • [Español](https://notebooknavigator.com/es/docs.html) • [فارسی](https://notebooknavigator.com/fa/docs.html) • [Français](https://notebooknavigator.com/fr/docs.html) • [Bahasa Indonesia](https://notebooknavigator.com/id/docs.html) • [Italiano](https://notebooknavigator.com/it/docs.html) • [Nederlands](https://notebooknavigator.com/nl/docs.html) • [Polski](https://notebooknavigator.com/pl/docs.html) • [Português](https://notebooknavigator.com/pt/docs.html) • [Português (Brasil)](https://notebooknavigator.com/pt-br/docs.html) • [Русский](https://notebooknavigator.com/ru/docs.html) • [ไทย](https://notebooknavigator.com/th/docs.html) • [Türkçe](https://notebooknavigator.com/tr/docs.html) • [Українська](https://notebooknavigator.com/uk/docs.html) • [Tiếng Việt](https://notebooknavigator.com/vi/docs.html) • [日本語](https://notebooknavigator.com/ja/docs.html) • [한국어](https://notebooknavigator.com/ko/docs.html) • [中文简体](https://notebooknavigator.com/zh-cn/docs.html) • [中文繁體](https://notebooknavigator.com/zh-tw/docs.html)
 
 ![Notebook Navigator Screenshot](https://github.com/johansan/notebook-navigator/blob/main/images/notebook-navigator.png?raw=true)

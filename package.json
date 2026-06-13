@@ -1,7 +1,7 @@
 {
-  "name": "notebook-navigator",
+  "name": "notebook-navigator-folders",
   "version": "3.1.2",
-  "description": "Replace the default file explorer with a clean two-pane interface featuring folder tree, tag browsing, file previews, keyboard navigation, drag-and-drop, pinned notes, and customizable display options.",
+  "description": "Fork of Notebook Navigator that lets a note appear in multiple folders in the navigator pane. Duplicate-named notes open the original (first created) note when clicked.",
   "main": "main.js",
   "engines": {
     "node": ">=24.0.0"

@@ -19,6 +19,7 @@
 import { Platform } from 'obsidian';
 import type { App, PaneType, TFile } from 'obsidian';
 import type { CommandQueueService } from '../services/CommandQueueService';
+import { getCanonicalNote } from './multiLocationNotes';
 
 interface OpenFileInContextParams {
     app: App;
@@ -34,18 +35,22 @@ interface OpenFileInContextParams {
 export async function openFileInContext({ app, commandQueue, file, context, active = true }: OpenFileInContextParams): Promise<void> {
     const resolvedContext: PaneType = Platform.isMobile && context === 'window' ? 'tab' : context;
 
+    // Multi-location notes: secondary (duplicate-name) notes open their canonical
+    // "first created" note even when opened in a new tab, split, or window.
+    const fileToOpen = getCanonicalNote(app, file);
+
     // Define the file opening operation
     const openFile = async () => {
         const leaf = app.workspace.getLeaf(resolvedContext);
         if (!leaf) {
             throw new Error(`Unable to open file in ${resolvedContext} context: leaf not available`);
         }
-        await leaf.openFile(file, { active });
+        await leaf.openFile(fileToOpen, { active });
     };
 
     // Execute through command queue if available to track file open context
     if (commandQueue) {
-        await commandQueue.executeOpenInNewContext(file, resolvedContext, openFile);
+        await commandQueue.executeOpenInNewContext(fileToOpen, resolvedContext, openFile);
         return;
     }
 
