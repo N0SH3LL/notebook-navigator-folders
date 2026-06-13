@@ -1,0 +1,302 @@
+/*
+ * Notebook Navigator - Plugin for Obsidian
+ * Copyright (c) 2025-2026 Johan Sanneblad
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Release Notes System
+ *
+ * This module manages the "What's new" feature that shows users what has changed
+ * between plugin versions. The system works as follows:
+ *
+ * 1. On plugin load, it compares the current version with the last shown version
+ * 2. If version increased, it shows all release notes between versions
+ * 3. If downgraded or same version, it shows the latest 5 releases
+ * 4. Individual releases can be marked with showOnUpdate: false to skip auto-display
+ * 5. Users can always manually access release notes via plugin settings
+ *
+ * The lastShownVersion is stored in plugin settings to track what the user has seen.
+ */
+
+/**
+ * Formatting in release notes
+ *
+ * Supported inline formats in both info and list items:
+ * - Bold text: **text**
+ * - Critical emphasis (red + bold): ==text==
+ * - Markdown link: [label](https://example.com)
+ * - Auto-link: https://example.com
+ *
+ * Supported block formats in info:
+ * - Line break: single \n or <br>
+ * - Paragraph break: double \n\n or two consecutive <br> markers
+ *
+ * Not supported:
+ * - Italics, headings, inline code, HTML except <br> line break markers
+ *
+ * Writing rules:
+ * - Use factual, concise statements
+ * - Avoid benefit language and subjective adjectives
+ * - Keep to the categories: new, improved, changed, fixed
+ */
+
+/**
+ * Represents a single release note entry
+ */
+export interface ReleaseNote {
+    version: string;
+    date: string;
+    /** If false, skip automatic modal display for this version during startup */
+    showOnUpdate?: boolean;
+    /** Optional banner image source. true uses version as banner id, string uses explicit URL or banner id */
+    bannerUrl?: boolean | string;
+    /** When true, the banner opens the full image in a new tab */
+    bannerClickable?: boolean;
+    /** Optional YouTube video URL shown above the release notes for this version */
+    youtubeUrl?: string;
+    info?: string; // General information about the release, shown at top without bullets
+    new?: string[];
+    improved?: string[];
+    changed?: string[];
+    fixed?: string[];
+}
+
+/**
+ * All release notes for the plugin, ordered from newest to oldest.
+ *
+ * When adding a new release:
+ * 1. Add it at the beginning of the array (newest first)
+ * 2. Categorize features into: new, improved, changed, or fixed arrays
+ */
+const RELEASE_NOTES: ReleaseNote[] = [
+    {
+        version: '3.1.2',
+        date: '2026-06-07',
+        showOnUpdate: false,
+        new: [
+            '**Settings.** New setting ==Folder grouping: current folder files at bottom== in List pane > Organization. Enable to show files in current folder on bottom when grouping by folder.'
+        ],
+        fixed: [
+            '**Calendar.** Fixed quarterly note indicator alignment with monthly and yearly note indicators.',
+            '**Calendar.** Fixed periodic note template buttons and descriptions initially missing in Obsidian 1.13.',
+            '**Folder notes.** Fixed Templater integration for folder note templates. The Folder notes settings now also show Templater plugin status.',
+            '**Folder notes.** Fixed right-sidebar folder note cleanup closing unrelated right sidebar panels. Users could see Properties, Backlinks, or other right sidebar panels close after toggling the pinned notes header or changing folders.',
+            '**Build.** Added workaround for Obsidian code scanner incorrectly flagging properly implemented Obsidian 1.13 support as error.'
+        ]
+    },
+    {
+        version: '3.1.0',
+        date: '2026-06-07',
+        showOnUpdate: true,
+        bannerUrl: true,
+        bannerClickable: true,
+        info: 'This version adds two fantastic new features: ==Open folder notes in right sidebar== and ==Right sidebar: Show closest folder note==. When these settings are enabled, selecting a folder will now automatically open its folder note or the closest ancestor folder note in the right sidebar! Super useful for scratch pads related to different areas of your vault.\n\nThis release also includes dozens of ==list pane and navigation pane performance improvements==. Notebook Navigator now does less work when scrolling and moving through notes, folders, tags and properties. Give it a try and let me know if you notice any difference!',
+        new: [
+            '**Commands.** New command ==Collapse / expand selected item== to toggle the selected navigation item.',
+            '**Settings.** New setting ==Open folder notes in right sidebar== to Settings > Folders & folder notes.',
+            '**Settings.** New setting ==Right sidebar: Show closest folder note==. When a folder is selected, the right sidebar automatically shows the nearest ancestor folder note.',
+            '**Settings.** New setting ==Pinned notes icon== to Settings > Appearance & behavior > Interface icons. This icon is displayed next to the Pinned items group header if set, default not set.',
+            '**Settings.** New setting ==Show subfolder paths== in List pane > Group headers. Default enabled, disable to only show folder names when grouping by folder.',
+            '**Settings.** New setting ==Show leaders== in Navigation pane > Appearance. Choose dots, dashes, or a line between item names and note counts. Makes navigation pane look like a Table of Contents.',
+            '**Style settings.** Two new style settings; ==Indent guide color and Leader color== to customize the colors of indent guides and leaders.'
+        ],
+        improved: [
+            '**Folder notes.** The vault root can now have a folder note. Default naming uses the vault name.',
+            '**List pane.** Individual folder group path segments are now clickable when subfolder paths are shown.',
+            '**List pane.** Lots of rendering performance improvements in the list pane.',
+            '**Navigation pane.** Lots of rendering performance improvements in the navigation pane.',
+            '**Icon packs.** Simple Icons was updated to 16.22, adding 9 brand icons.'
+        ],
+        changed: [
+            '**Feature images.** Breaking change! ==SVG images are no longer supported as feature images==. Large SVG images with embedded bitmaps were causing performance and memory issues for some users so this was disabled until further notice. As a result the cache will be rebuilt on startup.',
+            '**List pane.** Standard mode now keeps the standard row layout when date, preview, and feature image are hidden. Compact layout is only used when list mode is Compact.'
+        ],
+        fixed: [
+            '**Calendar.** Fixed Templater integration for notes created from the calendar.',
+            '**List pane.** Fixed quick actions not reappearing after switching from Notebook Navigator to another left sidebar tab and back.',
+            '**Commands.** Fixed Cmd+W accidentally closing Notebook Navigator after focusing the sidebar with the Notebook Navigator: Open command.'
+        ]
+    },
+    {
+        version: '3.0.2',
+        date: '2026-05-29',
+        showOnUpdate: true,
+        bannerUrl: true,
+        info: 'Settings search, finally! Obsidian 1.13 introduced a completely new Settings window that stays open and supports text search. All settings in Notebook Navigator have been meticulously rewritten to fully support this new structure, while still providing support for older versions like 1.11 and 1.12. Give it a try and let me know how you like it.',
+        new: [
+            '**Settings.** Notebook Navigator now support the new ==Obsidian 1.13 settings API==, including the new Settings dialog and settings search.'
+        ],
+        improved: [
+            '**List pane.** File tag and property pills now follow the navigation pane sort order. Colored items are still showing first if that setting is enabled.',
+            "**List pane.** Folder grouping now uses each file's actual parent folder. Descendant headers show the full path relative to the selected folder."
+        ],
+        fixed: [
+            '**List pane.** Fixed parent folder labels missing from notes in property views when **Show parent folder** was enabled.',
+            '**List pane.** Fixed delete selecting the wrong next note when folder grouping and descendant notes were enabled.'
+        ]
+    },
+    {
+        version: '3.0.1',
+        date: '2026-05-26',
+        showOnUpdate: true,
+        bannerUrl: true,
+        info: 'Notebook Navigator should start quickly on all devices. If you feel Notebook Navigator starts slowly, then please enable the new setting "Startup debug logging", restart, review the generated markdown file, and upload it to https://github.com/johansan/notebook-navigator as a bug report and I will take a look at it.',
+        new: [
+            '**List pane.** You can now ==merge notes in the list pane==! Right click several files or a group header to create a new note from selected files. You can also use it through the command "Merge notes".',
+            '**List pane.** ==Files can show character counts==, with or without spaces. Enable it in Settings > Notes > Word and character count.',
+            '**Startup.** New setting ==Startup debug logging==. Enable this in Advanced settings if you experience slow startup times, then review and upload the debug file to our GitHub page.'
+        ],
+        changed: [
+            '**Settings.** Settings structure was rewritten for easier navigation. You can now navigate to all sub pages from the first settings page.'
+        ],
+        improved: [
+            '**Shortcuts.** Search shortcuts can now be renamed from the context menu.',
+            '**List pane.** The **Edit sort order...** mode now fully supports keyboard navigation, including CMD+arrow up / down.'
+        ],
+        fixed: [
+            '**Navigation pane.** Fixed duplicated folder rows showing after folders were copied into the vault while Obsidian was open.'
+        ]
+    },
+    {
+        version: '3.0.0',
+        date: '2026-05-18',
+        showOnUpdate: true,
+        info: 'This update finally brings manual sort to the list pane! If you are a writer used to working with Ulysses or Scrivener, this should make your daily life much easier.',
+        youtubeUrl: 'https://youtu.be/OCx4v5gJkXE',
+        new: [
+            '**Manual sort.** ==New manual sorting mode in list pane.== You can now arrange notes in any order you want. The position is saved as a numeric index value in a frontmatter property, and works in single folders as well as with **Show notes from descendants** enabled.',
+            '**Manual sort.** You can reorder notes directly in the list pane. Select one or more notes and press Cmd/Ctrl + Arrow Up/Down. Or pick **Edit sort order...** from the sort menu to open a dedicated drag-and-drop view, which supports multi-select on desktop and touch on mobile.',
+            '**Manual sort.** New setting: List > Manual sort > ==New note placement== controls where new notes are added when manual sort is active: Top, Bottom, Below selected note, or Unsorted. Default is below selected note.',
+            '**List pane.** ==Custom group headers==. Set group mode to "Custom" then create or edit group headers by right clicking files in list pane.',
+            '**List pane.** ==Word count targets==. Custom group headers can show total word count and progress against a target word count, similar to writing targets in Scrivener.',
+            '**List pane.** ==Group headers can now be collapsed.== Click the chevron next to a group header to collapse or expand it.',
+            '**Recent files.** You can now drag items from recent files into shortcuts, folders, tags and properties.',
+            '**Calendar.** New setting Calendar > Calendar integration > ==Periodic notes locale== controls whether Notebook Navigator periodic note paths use the selected calendar locale or Obsidian locale.'
+        ],
+        improved: [
+            '**List pane.** ==Word count display== now supports title placement, property placement, target word counts, and target percentage display. Change it in List > Notes > Word count.'
+        ],
+        changed: [
+            '**Settings.** "Property to sort by" was renamed to ==Properties to sort by==. It now takes a comma-separated list of frontmatter properties, and each one shows up as its own option in the list pane sort menu.'
+        ],
+        fixed: [
+            '**Commands.** When **Notebook Navigator: Delete files** was called and the navigation pane was last focused, it could delete the selected folder. It now only deletes selected files.',
+            '**Shortcuts.** Folder and note shortcuts no longer break when synced between devices with different path case sensitivity, for example **appLab/SKILLS-WORKFLOWS** vs **applab/skills-workflows**.',
+            '**List pane.** Fixed extra spacing in feature image rows when dates are hidden and tags or properties are visible.',
+            '**List pane.** Removed tiny hairline gap above the sticky group header showing on some scaling modes.'
+        ]
+    }
+];
+
+/**
+ * Gets all release notes between two versions (inclusive).
+ * Used when upgrading to show what's changed since the last version.
+ *
+ * @param fromVersion - The starting version (usually the previously shown version)
+ * @param toVersion - The ending version (usually the current version)
+ * @returns Array of release notes between the versions, or latest notes if versions not found
+ */
+export function getReleaseNotesBetweenVersions(fromVersion: string, toVersion: string): ReleaseNote[] {
+    const fromIndex = RELEASE_NOTES.findIndex(note => note.version === fromVersion);
+    const toIndex = RELEASE_NOTES.findIndex(note => note.version === toVersion);
+
+    // If either version is not found, fall back to showing latest releases
+    if (fromIndex === -1 || toIndex === -1) {
+        return getLatestReleaseNotes();
+    }
+
+    const startIndex = Math.min(fromIndex, toIndex);
+    const endIndex = Math.max(fromIndex, toIndex);
+
+    return RELEASE_NOTES.slice(startIndex, endIndex + 1);
+}
+
+/**
+ * Gets the most recent release notes.
+ * Used for manual "What's new" access and as fallback.
+ *
+ * @param count - Number of latest releases to return (defaults to 5)
+ * @returns Array of the most recent release notes
+ */
+export function getLatestReleaseNotes(count: number = 5): ReleaseNote[] {
+    return RELEASE_NOTES.slice(0, count);
+}
+
+/**
+ * Compares two semantic version strings.
+ *
+ * @param v1 - First version string (e.g., "1.2.3")
+ * @param v2 - Second version string (e.g., "1.2.4")
+ * @returns 1 if v1 > v2, -1 if v1 < v2, 0 if equal
+ */
+export function compareVersions(v1: string, v2: string): number {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
+
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const part1 = parts1[i] || 0;
+        const part2 = parts2[i] || 0;
+
+        if (part1 > part2) return 1;
+        if (part1 < part2) return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * Determines whether release notes for the given version should appear automatically on update.
+ */
+export function isReleaseAutoDisplayEnabled(version: string): boolean {
+    const note = RELEASE_NOTES.find(entry => entry.version === version);
+    if (!note) {
+        return true;
+    }
+    return note.showOnUpdate !== false;
+}
+
+/**
+ * Determines whether release notes should appear automatically when upgrading between two versions.
+ *
+ * Upgrade decision rule:
+ * - Evaluate release notes in the semantic range (fromVersion, toVersion]
+ * - Return true when at least one note in that range has showOnUpdate not explicitly set to false
+ *
+ * Range resolution:
+ * - If both versions exist in RELEASE_NOTES, use their index range in the ordered list
+ * - If either version is missing, resolve the range by semantic version comparisons
+ *
+ * Non-upgrade transitions (same version or downgrade) use the target version setting.
+ */
+export function shouldAutoDisplayReleaseNotesForUpdate(fromVersion: string, toVersion: string): boolean {
+    if (compareVersions(toVersion, fromVersion) <= 0) {
+        return isReleaseAutoDisplayEnabled(toVersion);
+    }
+
+    const fromIndex = RELEASE_NOTES.findIndex(note => note.version === fromVersion);
+    const toIndex = RELEASE_NOTES.findIndex(note => note.version === toVersion);
+
+    const releaseNotesInUpgradePath =
+        fromIndex === -1 || toIndex === -1
+            ? RELEASE_NOTES.filter(note => compareVersions(note.version, fromVersion) > 0 && compareVersions(note.version, toVersion) <= 0)
+            : RELEASE_NOTES.slice(Math.min(fromIndex, toIndex), Math.max(fromIndex, toIndex));
+
+    if (releaseNotesInUpgradePath.length === 0) {
+        return isReleaseAutoDisplayEnabled(toVersion);
+    }
+
+    return releaseNotesInUpgradePath.some(note => note.showOnUpdate !== false);
+}
