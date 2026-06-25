@@ -1,7 +1,7 @@
 {
   "id": "notebook-navigator-folders",
   "name": "Notebook Navigator (Multi-location)",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "minAppVersion": "1.11.0",
   "description": "Fork of Notebook Navigator that lets a note appear in multiple folders in the navigator pane. Duplicate-named notes open the original (first created) note when clicked.",
   "author": "Johan Sanneblad (fork)",
